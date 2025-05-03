@@ -52,8 +52,7 @@ char* get_default_output_path(char* input_path, char* program, char* img_name) {
         size_t dir_len = dir - input_path;
         output_path = calloc(len + dir_len, 1);
         strncat(output_path, input_path, dir_len);
-        snprintf(output_path + dir_len, len - dir_len + 1, "/%s-%s.png", img_name, program);
-
+        snprintf(output_path + dir_len, len + 1, "/%s-%s.png", img_name, program);
     } else {
         output_path = calloc(len, 1);
         snprintf(output_path, len, "%s-%s.png", img_name, program);
