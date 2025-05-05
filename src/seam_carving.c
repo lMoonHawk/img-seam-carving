@@ -16,7 +16,7 @@
 #include "paint.h" 
 
 #define MAX_PATH 256
-#define OUTPUT_DIR "output/"
+#define OUTPUT_APPEND "seam"
 
 int width, height, stride;
 
@@ -43,20 +43,12 @@ char* cpy_image_name(char* path) {
     return strndup(dir, dot - dir);
 }
 
-char* get_default_output_path(char* input_path, char* program, char* img_name) {
-    char* output_path = NULL;
-    const char* dir = strrchr(input_path, '/');
-    size_t len = strlen(img_name) + 1 + strlen(program) + 4 + 1;
+char* get_default_output_path(char* input_path) {
 
-    if (dir != NULL) {
-        size_t dir_len = dir - input_path;
-        output_path = calloc(len + dir_len, 1);
-        strncat(output_path, input_path, dir_len);
-        snprintf(output_path + dir_len, len + 1, "/%s-%s.png", img_name, program);
-    } else {
-        output_path = calloc(len, 1);
-        snprintf(output_path, len, "%s-%s.png", img_name, program);
-    }
+    char* output_path = calloc(strlen(input_path) + 1 + strlen("seam") + 4 + 1, 1);
+    const char* ext = strrchr(input_path, '.');
+    strncat(output_path, input_path, ext - input_path);
+    strcat(output_path, "-seam.png");
 
     if (output_path == NULL) {
         fprintf(stderr, "[ERROR] Memory allocation failed\n");
@@ -64,7 +56,6 @@ char* get_default_output_path(char* input_path, char* program, char* img_name) {
     }
     return output_path;
 }
-
 
 void convert_to_greyscale(uint32_t* img, float* greyscale) {
     for (int i = 0; i < width * height; ++i) {
@@ -171,17 +162,14 @@ void remove_seam(uint32_t* img, float* greyscale, float* gradient, int* seam, Pi
 
 int main(int argc, char** argv) {
 
-    char* program = argv[0] + 2;
-
     bool paint = false;
     int iterations = 0;
 
-    char* img_name = NULL;
     char* input_path = NULL;
     char* output_path = NULL;
 
     int option;
-    while ((option = getopt(argc, argv, "pi:r:o:")) != -1) {
+    while ((option = getopt(argc, argv, ":pi:r:o:")) != -1) {
         switch (option) {
             case 'p':
                 paint = true;
@@ -191,24 +179,23 @@ int main(int argc, char** argv) {
                     fprintf(stderr, "[ERROR] Image path too long\n");
                     return 1;
                 }
-                img_name = cpy_image_name(optarg);
-                input_path = strndup(optarg, MAX_PATH);
+                input_path = optarg;
                 break;
             case 'o':
                 if (strlen(optarg) > MAX_PATH) {
                     fprintf(stderr, "[ERROR] Output path too long\n");
                     return 1;
                 }
-                output_path = strndup(optarg, MAX_PATH);
+                output_path = optarg;
                 break;
             case 'r':
                 iterations = atoi(optarg);
                 break;
             case '?':
-                fprintf(stderr, "[ERROR] Unknown option: %c\n", option);
+                fprintf(stderr, "[ERROR] Unknown option: %c\n", optopt);
                 return 1;
             case ':':
-                fprintf(stderr, "[ERROR] Missing argument for option: %c\n", option);
+                fprintf(stderr, "[ERROR] Missing argument for option: %c\n", optopt);
                 return 1;
         }
     }
@@ -226,7 +213,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     if (output_path == NULL) {
-        output_path = get_default_output_path(input_path, program, img_name);
+        output_path = get_default_output_path(input_path);
     }
 
     uint32_t* pixels = (uint32_t*)stbi_load(input_path, &width, &height, NULL, 4);
