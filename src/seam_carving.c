@@ -36,15 +36,7 @@ int sobel_y[3][3] = {
     { 1.0,  2.0,  1.0}
 };
 
-char* cpy_image_name(char* path) {
-    char* dir = strrchr(path, '/');
-    const char* dot = strrchr(path, '.');
-    dir = dir ? dir + 1 : path;
-    return strndup(dir, dot - dir);
-}
-
 char* get_default_output_path(char* input_path) {
-
     char* output_path = calloc(strlen(input_path) + 1 + strlen("seam") + 4 + 1, 1);
     const char* ext = strrchr(input_path, '.');
     strncat(output_path, input_path, ext - input_path);
@@ -55,6 +47,56 @@ char* get_default_output_path(char* input_path) {
         exit(1);
     }
     return output_path;
+}
+
+void argparse(int argc, char** argv, char** input_path, char** output_path, int* iterations, bool* paint) {
+    int option;
+    while ((option = getopt(argc, argv, ":pi:r:o:")) != -1) {
+        switch (option) {
+            case 'p':
+                *paint = true;
+                break;
+            case 'i':
+                if (strlen(optarg) > MAX_PATH) {
+                    fprintf(stderr, "[ERROR] Image path too long\n");
+                    exit(1);
+                }
+                *input_path = optarg;
+                break;
+            case 'o':
+                if (strlen(optarg) > MAX_PATH) {
+                    fprintf(stderr, "[ERROR] Output path too long\n");
+                    exit(1);
+                }
+                *output_path = optarg;
+                break;
+            case 'r':
+                *iterations = atoi(optarg);
+                break;
+            case '?':
+                fprintf(stderr, "[ERROR] Unknown option: %c\n", optopt);
+                exit(1);
+            case ':':
+                fprintf(stderr, "[ERROR] Missing argument for option: %c\n", optopt);
+                exit(1);
+        }
+    }
+
+    if (*iterations == 0) {
+        fprintf(stderr, "[ERROR] No number of pixel to remove provided\n");
+        exit(1);
+    }
+    if (*iterations < 0) {
+        fprintf(stderr, "[ERROR] Cannot remove negative pixels\n");
+        exit(1);
+    }
+    if (*input_path == NULL) {
+        fprintf(stderr, "[ERROR] No image path provided\n");
+        exit(1);
+    }
+    if (*output_path == NULL) {
+        *output_path = get_default_output_path(*input_path);
+    }
 }
 
 void convert_to_greyscale(uint32_t* img, float* greyscale) {
@@ -164,57 +206,9 @@ int main(int argc, char** argv) {
 
     bool paint = false;
     int iterations = 0;
-
     char* input_path = NULL;
     char* output_path = NULL;
-
-    int option;
-    while ((option = getopt(argc, argv, ":pi:r:o:")) != -1) {
-        switch (option) {
-            case 'p':
-                paint = true;
-                break;
-            case 'i':
-                if (strlen(optarg) > MAX_PATH) {
-                    fprintf(stderr, "[ERROR] Image path too long\n");
-                    return 1;
-                }
-                input_path = optarg;
-                break;
-            case 'o':
-                if (strlen(optarg) > MAX_PATH) {
-                    fprintf(stderr, "[ERROR] Output path too long\n");
-                    return 1;
-                }
-                output_path = optarg;
-                break;
-            case 'r':
-                iterations = atoi(optarg);
-                break;
-            case '?':
-                fprintf(stderr, "[ERROR] Unknown option: %c\n", optopt);
-                return 1;
-            case ':':
-                fprintf(stderr, "[ERROR] Missing argument for option: %c\n", optopt);
-                return 1;
-        }
-    }
-
-    if (iterations == 0) {
-        fprintf(stderr, "[ERROR] No number of pixel to remove provided\n");
-        return 1;
-    }
-    if (iterations < 0) {
-        fprintf(stderr, "[ERROR] Cannot remove negative pixels\n");
-        return 1;
-    }
-    if (input_path == NULL) {
-        fprintf(stderr, "[ERROR] No image path provided\n");
-        return 1;
-    }
-    if (output_path == NULL) {
-        output_path = get_default_output_path(input_path);
-    }
+    argparse(argc, argv, &input_path, &output_path, &iterations, &paint);
 
     uint32_t* pixels = (uint32_t*)stbi_load(input_path, &width, &height, NULL, 4);
     if (pixels == NULL) {
