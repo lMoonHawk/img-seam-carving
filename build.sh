@@ -13,12 +13,4 @@ fi
 
 set -x
 gcc -c src/paint.c -o build/paint.o ${CFLAGS}
-# gcc src/seam_carving.c build/paint.o -o seam ${CFLAGS} ${LINK} -DTERSE #-pg #-fopenmp #-march=native #-fopt-info-vec-optimized
-gcc src/seam_carving.c build/paint.o -o seam ${CFLAGS} ${LINK} -DTERSE #-pg #-fopenmp #-march=native #-fopt-info-vec-optimized
-
-# remove guy
-# ./seam -i _input/castle.jpg -o _output/castle_rm_50.png -r 50 -p
-
-# time ./seam -i _input/castle.jpg -o _output/castle_paint.png -r 750 -p
-# gprof seam > prof_float.txt
-# gprof seam > prof_orig.txt
+gcc src/seam_carving.c build/paint.o -o seam ${CFLAGS} ${LINK} #-DTERSE #-pg #-fopenmp #-march=native #-fopt-info-vec-optimized
