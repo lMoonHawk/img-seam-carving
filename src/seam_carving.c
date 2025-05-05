@@ -68,7 +68,12 @@ void argparse(int argc, char** argv, char** input_path, char** output_path, int*
                     fprintf(stderr, "[ERROR] Output path too long\n");
                     exit(1);
                 }
-                if (strcmp(strrchr(optarg, '.'), ".png") != 0) {
+                char* ext = strrchr(optarg, '.');
+                if (ext == NULL) {
+                    fprintf(stderr, "[ERROR] Output image must have the extension .png\n");
+                    exit(1);
+                }
+                if (strcmp(ext, ".png") != 0) {
                     fprintf(stderr, "[ERROR] Output image must be of type png\n");
                     exit(1);
                 }
